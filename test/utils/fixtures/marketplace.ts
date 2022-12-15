@@ -29,6 +29,8 @@ import type {
   CriteriaResolver,
   OfferItem,
   OrderComponents,
+  ReceivedItem,
+  SpentItem,
 } from "../types";
 import type { Contract, Wallet } from "ethers";
 
@@ -549,6 +551,39 @@ export const marketplaceFixture = async (
     };
   };
 
+  const getSpentItems = async (offerItems: OfferItem[]) => {
+    let spentItems: SpentItem[];
+    spentItems = [];
+
+    for (const offerItem of offerItems) {
+      spentItems.push({
+        itemType: offerItem.itemType,
+        token: offerItem.token,
+        identifier: offerItem.identifierOrCriteria,
+        amount: offerItem.startAmount,
+      });
+    }
+
+    return spentItems;
+  };
+
+  const getReceivedItems = async (considerationItems: ConsiderationItem[]) => {
+    let receivedItems: ReceivedItem[];
+    receivedItems = [];
+
+    for (const considerationItem of considerationItems) {
+      receivedItems.push({
+        itemType: considerationItem.itemType,
+        token: considerationItem.token,
+        identifier: considerationItem.identifierOrCriteria,
+        recipient: considerationItem.recipient,
+        amount: considerationItem.startAmount,
+      });
+    }
+
+    return receivedItems;
+  };
+
   return {
     marketplaceContract,
     directMarketplaceContract,
@@ -562,5 +597,7 @@ export const marketplaceFixture = async (
     createOrder,
     createMirrorBuyNowOrder,
     createMirrorAcceptOfferOrder,
+    getReceivedItems,
+    getSpentItems,
   };
 };

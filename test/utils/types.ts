@@ -94,6 +94,21 @@ export type AdvancedOrder = {
   extraData: string;
 };
 
+export type SpentItem = {
+  itemType: number;
+  token: string;
+  identifier: BigNumber;
+  amount: BigNumber;
+};
+
+export type ReceivedItem = {
+  itemType: number;
+  token: string;
+  identifier: BigNumber;
+  amount: BigNumber;
+  recipient: string;
+};
+
 export type BulkOrder = {
   tree: Array<Array<Array<Array<Array<Array<Array<OrderComponents>>>>>>>;
 };

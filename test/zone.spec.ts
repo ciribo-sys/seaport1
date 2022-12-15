@@ -39,6 +39,8 @@ describe(`Zone - PausableZone (Seaport v${VERSION})`, function () {
 
   let checkExpectedEvents: SeaportFixtures["checkExpectedEvents"];
   let createOrder: SeaportFixtures["createOrder"];
+  let getReceivedItems: SeaportFixtures["getReceivedItems"];
+  let getSpentItems: SeaportFixtures["getSpentItems"];
   let getTestItem721: SeaportFixtures["getTestItem721"];
   let getTestItem721WithCriteria: SeaportFixtures["getTestItem721WithCriteria"];
   let mintAndApprove721: SeaportFixtures["mintAndApprove721"];
@@ -57,6 +59,7 @@ describe(`Zone - PausableZone (Seaport v${VERSION})`, function () {
       checkExpectedEvents,
       createOrder,
       EIP1271WalletFactory,
+      getSpentItems,
       getTestItem721,
       getTestItem721WithCriteria,
       marketplaceContract,
@@ -655,6 +658,67 @@ describe(`Zone - PausableZone (Seaport v${VERSION})`, function () {
       { eventName: "Paused", contract: zoneContract as any },
     ]);
     expect(pauseEvents.length).to.equal(1);
+  });
+
+  it("Correctly returns the resolved item of a restricted order that uses criteria resolvers", async () => {
+    const pausableZoneControllerFactory = await ethers.getContractFactory(
+      "PausableZoneController",
+      owner
+    );
+    const pausableZoneController = await pausableZoneControllerFactory.deploy(
+      owner.address
+    );
+
+    // Deploy pausable zone
+    const zoneAddr = await createZone(pausableZoneController);
+
+    // Attach to Pausable Zone
+    const zoneContract = await ethers.getContractFactory("PausableZone", owner);
+
+    // Attach to zone
+    const zone = await zoneContract.attach(zoneAddr);
+
+    // Mint NFTs for use in orders
+    const nftId = await mintAndApprove721(seller, marketplaceContract.address);
+
+    const { root, proofs } = merkleTree([nftId]);
+
+    const offer = [getTestItem721WithCriteria(root, toBN(1), toBN(1))];
+
+    const consideration = [
+      getItemETH(parseEther("10"), parseEther("10"), seller.address),
+      getItemETH(parseEther("1"), parseEther("1"), owner.address),
+    ];
+
+    const criteriaResolvers = [
+      buildResolver(0, 0, 0, nftId, proofs[nftId.toString()]),
+    ];
+
+    const { order, orderHash, value } = await createOrder(
+      seller,
+      zoneAddr,
+      offer,
+      consideration,
+      2, // FULL_RESTRICTED
+      criteriaResolvers
+    );
+
+    const zoneParameters = {
+      orderHash: orderHash,
+      fulfiller: buyer.address,
+      offerer: seller.address,
+      offer: await getSpentItems(order.parameters.offer),
+      consideration: await getReceivedItems(order.parameters.consideration),
+      extraData: "",
+      orderHashes: [orderHash],
+      startTime: order.parameters.startTime,
+      endTime: order.parameters.endTime,
+      zoneHash: order.parameters.zoneHash,
+    };
+
+    expect(
+      await zone.connect(seller).validateOrder(zoneParameters)
+    ).to.be.equals(criteriaResolvers);
   });
 
   it("Revert on deploying a zone with the same salt", async () => {

@@ -84,6 +84,8 @@ export const seaportFixture = async (owner: Wallet) => {
     createOrder,
     createMirrorBuyNowOrder,
     createMirrorAcceptOfferOrder,
+    getReceivedItems,
+    getSpentItems,
   } = await marketplaceFixture(
     create2Factory,
     conduitController,
@@ -851,6 +853,8 @@ export const seaportFixture = async (owner: Wallet) => {
     createOrder,
     createMirrorBuyNowOrder,
     createMirrorAcceptOfferOrder,
+    getReceivedItems,
+    getSpentItems,
     withBalanceChecks,
     checkTransferEvent,
     checkExpectedEvents,
